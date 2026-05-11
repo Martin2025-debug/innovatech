@@ -7,30 +7,51 @@ on:
       - deploy
 
 jobs:
-  build-and-push:
+  build-and-deploy:
     runs-on: ubuntu-latest
 
     steps:
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Login en Docker Hub
+      - name: Login Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Construir imagen Backend
+      - name: Build Backend
         run: docker build -t chilindrina/innovatech-backend:latest ./innovatech-backend
 
-      - name: Construir imagen Frontend
+      - name: Build Frontend
         run: docker build -t chilindrina/innovatech-frontend:latest ./innovatech-frontend
 
-      - name: Publicar Backend en Docker Hub
+      - name: Push Backend
         run: docker push chilindrina/innovatech-backend:latest
 
-      - name: Publicar Frontend en Docker Hub
+      - name: Push Frontend
         run: docker push chilindrina/innovatech-frontend:latest
 
-      - name: Validar Docker Compose
-        run: docker compose config
+      - name: Deploy en EC2
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ${{ secrets.EC2_USER }}
+          key: ${{ secrets.EC2_SSH_KEY }}
+          script: |
+            cd /home/ec2-user
+
+            if [ ! -d innovatech ]; then
+              git clone https://github.com/Martin2025-debug/innovatech.git
+            fi
+
+            cd innovatech
+
+            git pull
+
+            docker compose down
+
+            docker pull chilindrina/innovatech-backend:latest
+            docker pull chilindrina/innovatech-frontend:latest
+
+            docker compose up -d
