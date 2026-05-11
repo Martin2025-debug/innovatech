@@ -1,26 +1,36 @@
-name: CI Pipeline
+name: CI/CD Pipeline
 
 on:
   push:
     branches:
       - main
+      - deploy
 
 jobs:
-
-  build:
-
+  build-and-push:
     runs-on: ubuntu-latest
 
     steps:
-
       - name: Clonar repositorio
         uses: actions/checkout@v4
 
-      - name: Construir backend
-        run: docker build -t innovatech-backend ./innovatech-backend
+      - name: Login en Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Construir frontend
-        run: docker build -t innovatech-frontend ./innovatech-frontend
+      - name: Construir imagen Backend
+        run: docker build -t chilindrina/innovatech-backend:latest ./innovatech-backend
 
-      - name: Verificar Docker Compose
+      - name: Construir imagen Frontend
+        run: docker build -t chilindrina/innovatech-frontend:latest ./innovatech-frontend
+
+      - name: Publicar Backend en Docker Hub
+        run: docker push chilindrina/innovatech-backend:latest
+
+      - name: Publicar Frontend en Docker Hub
+        run: docker push chilindrina/innovatech-frontend:latest
+
+      - name: Validar Docker Compose
         run: docker compose config
