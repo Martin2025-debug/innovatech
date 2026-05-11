@@ -1,0 +1,26 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+
+      - name: Clonar repositorio
+        uses: actions/checkout@v4
+
+      - name: Construir backend
+        run: docker build -t innovatech-backend ./innovatech-backend
+
+      - name: Construir frontend
+        run: docker build -t innovatech-frontend ./innovatech-frontend
+
+      - name: Verificar Docker Compose
+        run: docker compose config
